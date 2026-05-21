@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="fw-bold">
+            <i class="bi bi-graph-up me-2 text-primary"></i>
+            Parking Predictions
+        </h4>
+        <p class="text-muted">
+            ML-based prediction for the next hour using Random Forest
+        </p>
+    </div>
+</div>
+
+<!-- Prediction Cards -->
+<div class="row g-3 mb-5">
+    {% for p in predictions %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+
+                <!-- Slot Header -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 fw-bold">Slot {{ p.slot_number }}</h5>
+                    {% if p.will_be_occupied %}
+                        <span class="badge bg-danger">Likely Occupied</span>
+                    {% else %}
+                        <span class="badge bg-success">Likely Available</span>
+                    {% endif %}
+                </div>
+
+                <!-- 
+                    Availability Progress Bar
+                    FIX: Use data attribute instead of inline style
+                    to avoid Jinja2 inside CSS which confuses VS Code
+                -->
+                <div class="mb-2 small text-muted">Availability Probability</div>
+
+                <div class="progress mb-1" style="height: 12px;">
+                    <div class="progress-bar bg-success availability-bar"
+                         data-width="{{ p.probability_available }}"
+                         role="progressbar"
+                         aria-valuenow="{{ p.probability_available }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between small">
+                    <span class="text-success fw-semibold">
+                        {{ p.probability_available }}% Available
+                    </span>
+                    <span class="text-danger fw-semibold">
+                        {{ p.probability_occupied }}% Occupied
+                    </span>
+                </div>
+
+                <hr class="my-2">
+                <div class="small text-muted">
+                    <i class="bi bi-clock me-1"></i>
+                    Predicted for: <strong>Hour {{ p.predicted_hour }}:00</strong>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Occupancy Trend Chart -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-bar-chart-line me-2"></i>
+            Historical Occupancy Trend (by Hour)
+        </h6>
+    </div>
+    <div class="card-body">
+        <canvas id="trendChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- ML Info Card -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-body">
+        <h6 class="fw-semibold mb-3">
+            <i class="bi bi-info-circle me-1 text-info"></i>
+            How Predictions Work
+        </h6>
+        <ul class="list-unstyled small text-muted">
+            <li class="mb-1">
+                <i class="bi bi-check2 text-success me-1"></i>
+                Algorithm: Random Forest Classifier
+            </li>
+            <li class="mb-1">
+                <i class="bi bi-check2 text-success me-1"></i>
+                Features: Slot ID, Day of Week, Hour of Day
+            </li>
+            <li class="mb-1">
+                <i class="bi bi-check2 text-success me-1"></i>
+                Training Data: Historical occupancy records
+            </li>
+            <li class="mb-1">
+                <i class="bi bi-check2 text-success me-1"></i>
+                Prediction Window: Next 1 hour
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Hidden div to pass trend data to JavaScript safely -->
+<div id="trend-data"
+     data-trend="{{ trend | tojson | e }}"
+     style="display: none;">
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // ─── Set progress bar widths using JavaScript ─────────────────
+    // This replaces style="width: {{ value }}%" in HTML
+    // which causes VS Code CSS linting false errors.
+
+    var bars = document.querySelectorAll('.availability-bar');
+
+    for (var i = 0; i < bars.length; i++) {
+        var width = bars[i].getAttribute('data-width');
+        bars[i].style.width = width + '%';
+    }
+
+    // ─── Read trend data from hidden div ─────────────────────────
+    var trendContainer = document.getElementById('trend-data');
+    var rawData        = trendContainer.getAttribute('data-trend');
+    var trendData      = JSON.parse(rawData);
+
+    // ─── Build chart labels and values ───────────────────────────
+    var labels = [];
+    var values = [];
+
+    for (var j = 0; j < trendData.length; j++) {
+        labels.push(trendData[j].hour + ':00');
+        values.push(trendData[j].occupancy_rate);
+    }
+
+    // ─── Render Chart.js bar chart ────────────────────────────────
+    var ctx = document.getElementById('trendChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Occupancy Rate (%)',
+                    data: values,
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Occupancy: ' + context.raw + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Hour of Day'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

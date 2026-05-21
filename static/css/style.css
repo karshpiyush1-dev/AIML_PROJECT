@@ -1,0 +1,79 @@
+/* ─── Base Styles ─────────────────────────── */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ─── Navbar ──────────────────────────────── */
+.navbar-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Cards ───────────────────────────────── */
+.card {
+    transition: box-shadow 0.2s ease;
+}
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ─── Parking Slots ───────────────────────── */
+.parking-slot {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.parking-slot:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Buttons ─────────────────────────────── */
+.btn {
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+/* ─── Tables ──────────────────────────────── */
+.table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+/* ─── Progress bars ───────────────────────── */
+.progress {
+    border-radius: 10px;
+}
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* ─── Badges ──────────────────────────────── */
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* ─── Footer ──────────────────────────────── */
+footer {
+    font-size: 0.8rem;
+}
+
+/* ─── Responsive adjustments ──────────────── */
+@media (max-width: 576px) {
+    .parking-slot {
+        min-height: 90px;
+        padding: 12px !important;
+    }
+    .parking-slot i {
+        font-size: 1.5rem !important;
+    }
+}

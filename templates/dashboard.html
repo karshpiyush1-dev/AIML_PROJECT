@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="fw-bold">
+            <i class="bi bi-speedometer2 me-2 text-warning"></i>
+            Admin Dashboard
+        </h4>
+        <p class="text-muted">Manage parking slots and system settings</p>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold">{{ stats.total }}</div>
+            <div class="text-muted small">Total Slots</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 bg-success text-white text-center p-3">
+            <div class="fs-1 fw-bold">{{ stats.available }}</div>
+            <div class="small">Available</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 bg-danger text-white text-center p-3">
+            <div class="fs-1 fw-bold">{{ stats.occupied }}</div>
+            <div class="small">Occupied</div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Quick Actions</h6>
+    </div>
+    <div class="card-body d-flex flex-wrap gap-2">
+        <a href="{{ url_for('simulate_sensors') }}"
+           class="btn btn-warning"
+           onclick="return confirm('Simulate random sensor data for all slots?')">
+            <i class="bi bi-broadcast me-1"></i>Simulate Sensors
+        </a>
+        <a href="{{ url_for('retrain_model') }}"
+           class="btn btn-info text-white"
+           onclick="return confirm('Retrain the ML prediction model?')">
+            <i class="bi bi-cpu me-1"></i>Retrain ML Model
+        </a>
+        <a href="{{ url_for('prediction_view') }}" class="btn btn-outline-primary">
+            <i class="bi bi-graph-up me-1"></i>View Predictions
+        </a>
+    </div>
+</div>
+
+<!-- Update Slot Status -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Update Slot Status</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('update_slot_route') }}"
+              class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Select Slot</label>
+                <select class="form-select" name="slot_number" required>
+                    <option value="">Choose slot...</option>
+                    {% for slot in slots %}
+                    <option value="{{ slot.slot_number }}">
+                        {{ slot.slot_number }}
+                        ({{ 'Occupied' if slot.is_occupied else 'Available' }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Status</label>
+                <select class="form-select" name="is_occupied" required>
+                    <option value="0">✅ Available</option>
+                    <option value="1">🔴 Occupied</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-dark w-100">
+                    <i class="bi bi-check-circle me-1"></i>Update Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Current Slot Status -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Current Slot Status</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Slot</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in slots %}
+                    <tr>
+                        <td class="fw-semibold">{{ slot.slot_number }}</td>
+                        <td>
+                            {% if slot.is_occupied %}
+                                <span class="badge bg-danger">Occupied</span>
+                            {% else %}
+                                <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ slot.updated_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent History -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">Recent Activity (Last 20 entries)</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Slot</th>
+                        <th>Status</th>
+                        <th>Recorded At</th>
+                        <th>Day</th>
+                        <th>Hour</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+                    {% for h in history %}
+                    <tr>
+                        <td>{{ h.slot_number }}</td>
+                        <td>
+                            {% if h.is_occupied %}
+                                <span class="badge bg-danger">Occupied</span>
+                            {% else %}
+                                <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ h.recorded_at }}</td>
+                        <td>{{ days[h.day_of_week] if h.day_of_week is not none else '-' }}</td>
+                        <td>{{ h.hour_of_day }}:00</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
